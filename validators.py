@@ -1,13 +1,26 @@
-from pydantic import BaseModel, root_validator,validate_email
+from pydantic import BaseModel, root_validator, validate_email, ValidationError, parse_obj_as
+from datetime import datetime
+import uuid
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, engine
+
+from  models import Employee
 
 
+SessionLocal = sessionmaker(autocommit = False, autoflush = False, bind = engine)
 class EmployeeRequest(BaseModel):
     name : str
     email_id : str
     address : str
     department : str
-    salary : float
+    salary : int
     head : bool
+    phone_number:str
+    time: datetime = str(datetime.now())
+
+
+
+
 
     @root_validator
     def validate_email_field(cls,values):
@@ -16,17 +29,25 @@ class EmployeeRequest(BaseModel):
             validate_email(em)
         return values
 
-    class Config:
-        orm_mode=True
+
+
+    @root_validator
+    def validate_mobile(cls,values):
+        ph=values.get("phone_number")
+        if len(ph)==10 and ph.isdigit():
+            return values
+        raise ValueError("not a valid mobile number")
 
 class EmployeeResponse(BaseModel):
-    id:str
+    id:uuid.UUID
     name:str
     email_id:str
     address:str
     department:str
     salary:float
     head:bool
+    phone_number=str
+    time:datetime = str(datetime.now())
 
     class Config:
         orm_mode=True
@@ -38,7 +59,7 @@ class DepartmentRequest(BaseModel):
         orm_mode=True
 
 class DepartmentResponse(BaseModel):
-    id:str
+    id:uuid.UUID
     name:str
 
     class Config:
